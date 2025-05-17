@@ -4,9 +4,10 @@ import io
 import zipfile
 
 TARGET_SIZE = (1080, 1440)
+SCALE_MARGIN = 0.95  # Scale down to 95% to ensure visible white padding
 
 st.title("📦 Uzum Image Resizer")
-st.markdown("This tool resizes all uploaded images to 1080x1440 for Uzum with white background. The full image will be preserved, and padding will be added as needed.")
+st.markdown("Resize images to 1080x1440 for Uzum. Full image preserved, with white padding guaranteed.")
 
 uploaded_files = st.file_uploader(
     "Choose one or more images",
@@ -14,8 +15,13 @@ uploaded_files = st.file_uploader(
     accept_multiple_files=True
 )
 
-def force_pad_no_crop(image, target_size, fill_color="white"):
-    image.thumbnail(target_size, Image.LANCZOS)
+def force_pad_with_margin(image, target_size, scale=SCALE_MARGIN, fill_color="white"):
+    # Calculate safe area inside the target box with margin
+    safe_width = int(target_size[0] * scale)
+    safe_height = int(target_size[1] * scale)
+
+    # Resize to fit inside safe box
+    image.thumbnail((safe_width, safe_height), Image.LANCZOS)
     background = Image.new("RGB", target_size, fill_color)
     offset = ((target_size[0] - image.width) // 2, (target_size[1] - image.height) // 2)
     background.paste(image, offset)
@@ -28,9 +34,9 @@ if uploaded_files:
             image = Image.open(uploaded_file)
             st.image(image, caption=f"Original: {uploaded_file.name}", use_column_width=True)
 
-            resized_image = force_pad_no_crop(image, TARGET_SIZE)
+            resized_image = force_pad_with_margin(image, TARGET_SIZE)
 
-            st.image(resized_image, caption="Processed (1080x1440, no crop)", use_column_width=True)
+            st.image(resized_image, caption="Processed (1080x1440, padded)", use_column_width=True)
 
             img_bytes = io.BytesIO()
             resized_image.save(img_bytes, format="JPEG")

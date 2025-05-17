@@ -32,11 +32,11 @@ if uploaded_files:
     with zipfile.ZipFile(zip_buffer, "w") as zip_file:
         for uploaded_file in uploaded_files:
             image = Image.open(uploaded_file)
-            st.image(image, caption=f"Original: {uploaded_file.name}", use_column_width=True)
+            st.image(image, caption=f"Original: {uploaded_file.name}", use_container_width=True)
 
             resized_image = force_pad_with_margin(image, TARGET_SIZE)
 
-            st.image(resized_image, caption="Processed (1080x1440, padded)", use_column_width=True)
+            st.image(resized_image, caption="Processed (1080x1440, padded)", use_container_width=True)
 
             img_bytes = io.BytesIO()
             resized_image.save(img_bytes, format="JPEG")

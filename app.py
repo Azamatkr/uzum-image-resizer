@@ -1,37 +1,30 @@
-import streamlit as st
-from PIL import Image, ImageOps
-import io
-import zipfile
+from PIL import Image
+import os
 
 TARGET_SIZE = (1080, 1440)
+SCALE_RATIO = 0.9
 
-def resize_and_pad(img):
-    return ImageOps.pad(img, TARGET_SIZE, color="white", centering=(0.5, 0.5))
+def process_and_save_image(input_path, output_path):
+    with Image.open(input_path) as img:
+        scaled_size = (int(TARGET_SIZE[0] * SCALE_RATIO), int(TARGET_SIZE[1] * SCALE_RATIO))
+        img.thumbnail(scaled_size, Image.LANCZOS)
 
-st.title("Uzum Image Resizer (1080x1440)")
+        background = Image.new("RGB", TARGET_SIZE, "white")
+        offset = ((TARGET_SIZE[0] - img.size[0]) // 2, (TARGET_SIZE[1] - img.size[1]) // 2)
+        background.paste(img, offset)
 
-uploaded_files = st.file_uploader(
-    "Загрузите одно или несколько изображений (JPG, PNG, WEBP)",
-    type=["jpg", "jpeg", "png", "webp"],
-    accept_multiple_files=True
-)
+        background.save(output_path, format="JPEG", quality=95)
 
-if uploaded_files:
-    with io.BytesIO() as zip_buffer:
-        with zipfile.ZipFile(zip_buffer, "w") as zip_file:
-            for uploaded_file in uploaded_files:
-                img = Image.open(uploaded_file).convert("RGB")
-                processed_img = resize_and_pad(img)
+if __name__ == "__main__":
+    import sys
+    from pathlib import Path
 
-                output_filename = f"{uploaded_file.name.rsplit('.', 1)[0]}_1080x1440.jpg"
-                img_byte_arr = io.BytesIO()
-                processed_img.save(img_byte_arr, format='JPEG', quality=95)
-                zip_file.writestr(output_filename, img_byte_arr.getvalue())
+    input_folder = Path("input")
+    output_folder = Path("output")
+    output_folder.mkdir(exist_ok=True)
 
-        st.success("✅ Изображения обработаны!")
-        st.download_button(
-            label="📦 Скачать все как ZIP",
-            data=zip_buffer.getvalue(),
-            file_name="processed_images.zip",
-            mime="application/zip"
-        )
+    for file in input_folder.glob("*.*"):
+        if file.suffix.lower() in [".jpg", ".jpeg", ".png", ".webp"]:
+            out_path = output_folder / f"{file.stem}_1080x1440.jpg"
+            process_and_save_image(file, out_path)
+            print(f"✅ {file.name} -> {out_path.name}")

@@ -3,12 +3,12 @@ from PIL import Image, ImageOps
 import io
 import zipfile
 
-# Target size for Uzum requirements
 TARGET_SIZE = (1080, 1440)
 
 st.title("📦 Uzum Image Resizer")
-st.markdown("""Upload one or more images (jpg, png, webp). They will be resized to 1080x1440 with white padding.
-After processing, you can download all the results as a ZIP archive.""")
+st.markdown("Resize images to 1080x1440 for Uzum. Choose between standard 'Full Fit' (with white padding) or 'Smart Fit' (tighter framing).")
+
+fit_mode = st.radio("Choose resize mode:", ["Smart Fit (less padding)", "Full Fit (white padding)"])
 
 uploaded_files = st.file_uploader(
     "Choose one or more images",
@@ -23,16 +23,17 @@ if uploaded_files:
             image = Image.open(uploaded_file)
             st.image(image, caption=f"Original: {uploaded_file.name}", use_column_width=True)
 
-            # Resize with padding
-            resized_image = ImageOps.pad(image, TARGET_SIZE, color="white", centering=(0.5, 0.5))
-            st.image(resized_image, caption="Resized (1080x1440)", use_column_width=True)
+            if fit_mode == "Full Fit (white padding)":
+                resized_image = ImageOps.pad(image, TARGET_SIZE, color="white", centering=(0.5, 0.5))
+            else:
+                resized_image = ImageOps.fit(image, TARGET_SIZE, centering=(0.5, 0.5))
 
-            # Save to memory
+            st.image(resized_image, caption=f"Processed ({fit_mode})", use_column_width=True)
+
             img_bytes = io.BytesIO()
             resized_image.save(img_bytes, format="JPEG")
             img_bytes.seek(0)
 
-            # Add to ZIP
             filename = f"{uploaded_file.name.rsplit('.', 1)[0]}_1080x1440.jpg"
             zip_file.writestr(filename, img_bytes.read())
 

@@ -25,28 +25,23 @@ def process_image(img: Image.Image) -> Image.Image:
     и помещает его в центр белого холста 1080×1440.
     """
     img = img.convert("RGB")
-    # Уменьшаем до 90% целевого
     max_w = int(TARGET_WIDTH * SCALE_FACTOR)
     max_h = int(TARGET_HEIGHT * SCALE_FACTOR)
     img.thumbnail((max_w, max_h), Image.LANCZOS)
-    # Создаём белый фон 1080×1440 всегда
     bg = Image.new("RGB", (TARGET_WIDTH, TARGET_HEIGHT), "white")
     offset = ((TARGET_WIDTH - img.width) // 2, (TARGET_HEIGHT - img.height) // 2)
     bg.paste(img, offset)
     return bg
 
 if uploaded_files:
-    # Буфер ZIP
     zip_buffer = io.BytesIO()
-    processed = []  # для отображения после кнопки
+    processed = []
 
-    # Обработка изображений в памяти
     with zipfile.ZipFile(zip_buffer, "w") as zip_file:
         for up in uploaded_files:
             img = Image.open(up)
             out = process_image(img)
 
-            # Подготовка байтов для записи
             bts = io.BytesIO()
             out.save(bts, format="JPEG", quality=95)
             bts.seek(0)
@@ -67,6 +62,6 @@ if uploaded_files:
         mime="application/zip"
     )
 
-    # Отображаем превью
+    # Превью изображений
     for caption, img in processed:
-        st.image(img, caption=caption, use_column_width=True)
+        st.image(img, caption=caption, use_container_width=True)

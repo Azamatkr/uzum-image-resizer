@@ -10,21 +10,23 @@ SCALE_FACTOR = 0.9
 
 st.set_page_config(page_title="Uzum Image Resizer", layout="centered")
 st.title("🖼️ Uzum Image Resizer")
-st.caption("Изображения масштабируются до 90% и центрируются на белом фоне 1080×1440. Файлы сбрасываются по кнопке «Сбросить».") 
+st.caption("Изображения масштабируются до 90% и центрируются на белом фоне 1080×1440.")
 
-# Кнопка для очистки ранее загруженных файлов
-if st.button("🔄 Сбросить файлы"):
-    st.session_state.uploaded_files = []
+# Кнопка перезагрузки всего приложения (очищает все загрузки)
+if st.button("🔄 Сбросить всё"):
+    st.experimental_rerun()
 
-# Загрузчик под ключом
+# Загрузчик файлов
 uploaded_files = st.file_uploader(
-    "📤 Загрузите изображения (JPG, PNG, WEBP)", 
-    type=["jpg", "jpeg", "png", "webp"], 
-    accept_multiple_files=True,
-    key="uploaded_files"
+    "📤 Загрузите изображения (JPG, PNG, WEBP)",
+    type=["jpg", "jpeg", "png", "webp"],
+    accept_multiple_files=True
 )
 
 def process_image(img: Image.Image) -> Image.Image:
+    """
+    Масштабирует изображение до 90% и всегда центрирует на белом холсте 1080×1440.
+    """
     img = img.convert("RGB")
     max_w = int(TARGET_WIDTH * SCALE_FACTOR)
     max_h = int(TARGET_HEIGHT * SCALE_FACTOR)
@@ -38,6 +40,7 @@ if uploaded_files:
     zip_buffer = io.BytesIO()
     processed = []
 
+    # Собираем ZIP в памяти
     with zipfile.ZipFile(zip_buffer, "w") as zip_file:
         for up in uploaded_files:
             img = Image.open(up)
@@ -55,7 +58,7 @@ if uploaded_files:
 
     zip_buffer.seek(0)
 
-    # Кнопка скачивания сверху
+    # Кнопка скачивания наверху
     st.download_button(
         label="📦 Скачать все изображения (flat)",
         data=zip_buffer.getvalue(),
@@ -63,6 +66,6 @@ if uploaded_files:
         mime="application/zip"
     )
 
-    # Показ превью
+    # Показываем превью под кнопкой
     for caption, img in processed:
         st.image(img, caption=caption, use_container_width=True)

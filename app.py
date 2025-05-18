@@ -10,20 +10,21 @@ SCALE_FACTOR = 0.9
 
 st.set_page_config(page_title="Uzum Image Resizer", layout="centered")
 st.title("🖼️ Uzum Image Resizer")
-st.caption("Изображения масштабируются до 90% и всегда центрируются на белом фоне 1080×1440.")
+st.caption("Изображения масштабируются до 90% и центрируются на белом фоне 1080×1440. Файлы сбрасываются по кнопке «Сбросить».") 
 
-# Загрузчик файлов
+# Кнопка для очистки ранее загруженных файлов
+if st.button("🔄 Сбросить файлы"):
+    st.session_state.uploaded_files = []
+
+# Загрузчик под ключом
 uploaded_files = st.file_uploader(
-    "📤 Загрузите изображения (JPG, PNG, WEBP)",
-    type=["jpg", "jpeg", "png", "webp"],
-    accept_multiple_files=True
+    "📤 Загрузите изображения (JPG, PNG, WEBP)", 
+    type=["jpg", "jpeg", "png", "webp"], 
+    accept_multiple_files=True,
+    key="uploaded_files"
 )
 
 def process_image(img: Image.Image) -> Image.Image:
-    """
-    Масштабирует изображение до 90% от целевого,
-    и помещает его в центр белого холста 1080×1440.
-    """
     img = img.convert("RGB")
     max_w = int(TARGET_WIDTH * SCALE_FACTOR)
     max_h = int(TARGET_HEIGHT * SCALE_FACTOR)
@@ -54,7 +55,7 @@ if uploaded_files:
 
     zip_buffer.seek(0)
 
-    # Кнопка скачивания вверху
+    # Кнопка скачивания сверху
     st.download_button(
         label="📦 Скачать все изображения (flat)",
         data=zip_buffer.getvalue(),
@@ -62,6 +63,6 @@ if uploaded_files:
         mime="application/zip"
     )
 
-    # Превью изображений
+    # Показ превью
     for caption, img in processed:
         st.image(img, caption=caption, use_container_width=True)

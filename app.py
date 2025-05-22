@@ -1,4 +1,5 @@
 import streamlit as st
+from streamlit.runtime.scriptrunner import RerunException
 from PIL import Image
 import io
 import zipfile
@@ -12,17 +13,14 @@ st.set_page_config(page_title="Uzum Image Resizer", layout="centered")
 st.title("🖼️ Uzum Image Resizer")
 st.caption("Изображения масштабируются до 90% и центрируются на белом фоне 1080×1440.")
 
-def clear_uploads():
-    # Удаляем ключ с загруженными файлами
-    if "uploaded_files" in st.session_state:
-        del st.session_state["uploaded_files"]
-    # Перезапускаем скрипт, чтобы uploader перерисовался пустым
-    st.experimental_rerun()
+# Кнопка «Сбросить всё»
+if st.button("🔄 Сбросить всё"):
+    # Удаляем сохранённые файлы
+    st.session_state.pop("uploaded_files", None)
+    # Генерируем перезапуск приложения
+    raise RerunException
 
-# Кнопка сброса файлов
-st.button("🔄 Сбросить всё", on_click=clear_uploads)
-
-# Сам file_uploader, хранящий список в session_state["uploaded_files"]
+# Загрузчик с ключом
 uploaded_files = st.file_uploader(
     "📤 Загрузите изображения (JPG, PNG, WEBP)",
     type=["jpg", "jpeg", "png", "webp"],
@@ -43,25 +41,20 @@ def process_image(img: Image.Image) -> Image.Image:
 if uploaded_files:
     zip_buffer = io.BytesIO()
     processed = []
-
     with zipfile.ZipFile(zip_buffer, "w") as zip_file:
         for up in uploaded_files:
             img = Image.open(up)
             out = process_image(img)
-
             bts = io.BytesIO()
             out.save(bts, format="JPEG", quality=95)
             bts.seek(0)
-
             name = up.name.rsplit(".", 1)[0]
             zip_path = f"{name}_1080x1440.jpg"
             zip_file.writestr(zip_path, bts.read())
-
             processed.append((zip_path, out))
-
     zip_buffer.seek(0)
 
-    # Кнопка скачивания наверху
+    # Ссылка на скачивание наверху
     st.download_button(
         label="📦 Скачать все изображения (flat)",
         data=zip_buffer.getvalue(),
@@ -69,6 +62,6 @@ if uploaded_files:
         mime="application/zip"
     )
 
-    # Показываем превью
+    # Превью
     for caption, img in processed:
         st.image(img, caption=caption, use_container_width=True)

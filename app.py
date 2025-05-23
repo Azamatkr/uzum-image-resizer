@@ -1,5 +1,4 @@
 import streamlit as st
-from streamlit.runtime.scriptrunner import RerunException
 from PIL import Image
 import io
 import zipfile
@@ -15,12 +14,10 @@ st.caption("Изображения масштабируются до 90% и це
 
 # Кнопка «Сбросить всё»
 if st.button("🔄 Сбросить всё"):
-    # Удаляем сохранённые файлы
+    # Удаляем сохранённые файлы из состояния
     st.session_state.pop("uploaded_files", None)
-    # Генерируем перезапуск приложения
-    raise RerunException
 
-# Загрузчик с ключом
+# Сам uploader под тем же ключом
 uploaded_files = st.file_uploader(
     "📤 Загрузите изображения (JPG, PNG, WEBP)",
     type=["jpg", "jpeg", "png", "webp"],
@@ -29,6 +26,7 @@ uploaded_files = st.file_uploader(
 )
 
 def process_image(img: Image.Image) -> Image.Image:
+    """Масштабирует до 90% и центрирует на белом фоне 1080×1440"""
     img = img.convert("RGB")
     max_w = int(TARGET_WIDTH * SCALE_FACTOR)
     max_h = int(TARGET_HEIGHT * SCALE_FACTOR)
@@ -41,20 +39,26 @@ def process_image(img: Image.Image) -> Image.Image:
 if uploaded_files:
     zip_buffer = io.BytesIO()
     processed = []
+
     with zipfile.ZipFile(zip_buffer, "w") as zip_file:
         for up in uploaded_files:
             img = Image.open(up)
             out = process_image(img)
+
+            # Сохраняем в буфер
             bts = io.BytesIO()
             out.save(bts, format="JPEG", quality=95)
             bts.seek(0)
+
             name = up.name.rsplit(".", 1)[0]
             zip_path = f"{name}_1080x1440.jpg"
             zip_file.writestr(zip_path, bts.read())
+
             processed.append((zip_path, out))
+
     zip_buffer.seek(0)
 
-    # Ссылка на скачивание наверху
+    # Кнопка скачивания сверху
     st.download_button(
         label="📦 Скачать все изображения (flat)",
         data=zip_buffer.getvalue(),
@@ -62,6 +66,6 @@ if uploaded_files:
         mime="application/zip"
     )
 
-    # Превью
+    # Показываем превью
     for caption, img in processed:
         st.image(img, caption=caption, use_container_width=True)
